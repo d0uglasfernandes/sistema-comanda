@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  users     User[]
+  products  Product[]
+  orders    Order[]
+
+  @@unique([id])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   
+  name         String   
+  passwordHash String   
+  role         Role     @default(GARCOM)
+  theme        String   @default("light")
+  tenantId     String   
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamento com Tenant
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([email, tenantId])
+}
+
+model Product {
+  id           String       @id @default(cuid())
+  name         String       
+  priceInCents Int          
+  tenantId     String       
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relacionamento com Tenant
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  items OrderItem[]
+
+  @@index([tenantId])
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  productId  String
+  quantity   Int
+  unitPrice  Int
+  createdAt  DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  tableNumber  Int         
+  status       OrderStatus @default(OPEN)
+  totalInCents Int         @default(0)
+  tenantId     String      
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relacionamento com Tenant
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  items OrderItem[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+enum Role {
+  ADMIN
+  CAIXA
+  GARCOM
+}
+
+enum OrderStatus {
+  OPEN
+  CLOSED
+  PAID
+}

@@ -1,0 +1,119 @@
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { db } from '@/lib/db';
+
+export async function GET(request: NextRequest) {
+  try {
+    const tenantId = request.headers.get('x-tenant-id');
+    const userRole = request.headers.get('x-user-role');
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Tenant ID required' },
+        { status: 400 }
+      );
+    }
+
+    if (userRole !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
+    const users = await db.user.findMany({
+      where: { tenantId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        theme: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error('Get users error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const tenantId = request.headers.get('x-tenant-id');
+    const userRole = request.headers.get('x-user-role');
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Tenant ID required' },
+        { status: 400 }
+      );
+    }
+
+    if (userRole !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
+    const { email, name, password, role } = await request.json();
+
+    if (!email || !name || !password || !role) {
+      return NextResponse.json(
+        { error: 'All fields are required' },
+        { status: 400 }
+      );
+    }
+
+    const existingUser = await db.user.findFirst({
+      where: {
+        email,
+        tenantId,
+      },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 409 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await db.user.create({
+      data: {
+        email,
+        name,
+        passwordHash,
+        role,
+        tenantId,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        theme: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json(user, { status: 201 });
+  } catch (error) {
+    console.error('Create user error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

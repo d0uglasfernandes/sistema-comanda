@@ -1,0 +1,60 @@
+import { Metadata } from "next";
+import { headers } from "next/headers";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  // Buscar dados do tenant para metadata
+  let tenantName: string | undefined;
+  
+  try {
+    const headersList = await headers();
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/tenant`, {
+      headers: {
+        cookie: headersList.get('cookie') || '',
+      },
+      cache: 'no-store',
+    });
+    
+    if (response.ok) {
+      const tenantData = await response.json();
+      tenantName = tenantData.name;
+    }
+  } catch (error) {
+    console.error('Failed to fetch tenant data for metadata:', error);
+  }
+  
+  const metadata: Metadata = {
+    title: tenantName ? `${tenantName} - Sistema de Comandas` : "Sistema de Comandas de Bar",
+    description: tenantName ? `Sistema completo para gerenciamento de comandas do ${tenantName}` : "Sistema completo para gerenciamento de comandas de bar com multi-tenant",
+  };
+
+  return (
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+      >
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
