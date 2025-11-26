@@ -77,9 +77,11 @@ export async function POST(request: NextRequest) {
     const successUrl = `${baseUrl}/?payment=success`;
     const cancelUrl = `${baseUrl}/?payment=cancelled`;
 
-    // Se o tenant já está em TRIAL, não adiciona trial adicional
-    // O usuário quer pagar agora, então a assinatura começa imediatamente
-    const includeTrial = tenant.subscriptionStatus !== 'TRIAL';
+    // Se o tenant já está em TRIAL ou PAST_DUE, não adiciona trial adicional
+    // TRIAL: já está testando, não precisa de outro período de teste
+    // PAST_DUE: empresa inadimplente renovando, já teve acesso antes
+    // Apenas empresas completamente novas recebem trial de 3 dias
+    const includeTrial = tenant.subscriptionStatus !== 'TRIAL' && tenant.subscriptionStatus !== 'PAST_DUE';
 
     // Cria sessão de checkout
     const session = await createCheckoutSession(
