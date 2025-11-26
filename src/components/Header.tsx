@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -12,10 +13,13 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, Settings, Sun, Moon } from 'lucide-react';
+import PaymentNotification from './PaymentNotification';
+import axios from 'axios';
 
 export default function Header() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { subscriptionData, shouldShowNotification } = useSubscription();
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -44,12 +48,36 @@ export default function Header() {
     window.location.href = '/login';
   };
 
+  const handlePayment = async () => {
+    try {
+      const response = await axios.post('/api/subscription/create-checkout');
+      const { url } = response.data;
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Erro ao criar sessão de pagamento. Tente novamente.');
+    }
+  };
+
   return (
-    <header className="bg-card border-b border-border px-4 h-16 sticky top-0 z-50">
-      <div className="flex items-center justify-between h-full">
-        <div className="flex items-center space-x-4">
-          {/* Título removido - agora aparece no Sidebar */}
+    <>
+      {/* Payment Notification */}
+      {shouldShowNotification && subscriptionData && (
+        <div className="sticky top-0 z-50">
+          <PaymentNotification 
+            daysUntilDue={subscriptionData.daysUntilDue || 0}
+            onPaymentClick={handlePayment}
+          />
         </div>
+      )}
+      
+      <header className="bg-card border-b border-border px-4 h-16 sticky top-0 z-50">
+        <div className="flex items-center justify-between h-full">
+          <div className="flex items-center space-x-4">
+            {/* Título removido - agora aparece no Sidebar */}
+          </div>
 
         <div className="flex items-center space-x-3">
           {/* Theme Toggle Button */}
@@ -110,5 +138,6 @@ export default function Header() {
         </div>
       </div>
     </header>
+    </>
   );
 }

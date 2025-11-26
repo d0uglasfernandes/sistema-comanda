@@ -16,15 +16,62 @@ datasource db {
 model Tenant {
   id        String   @id @default(cuid())
   name      String
+  ownerEmail String?
+  
+  // Stripe Integration
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  isActive             Boolean   @default(false)
+  trialEndsAt          DateTime?
+  subscriptionStatus   SubscriptionStatus @default(TRIAL)
+  currentPeriodEnd     DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
-  users     User[]
-  products  Product[]
-  orders    Order[]
+  users         User[]
+  products      Product[]
+  orders        Order[]
+  subscriptions Subscription[]
+  payments      Payment[]
 
   @@unique([id])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  stripeSubscriptionId String   @unique
+  status               SubscriptionStatus @default(TRIAL)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean  @default(false)
+  priceInCents         Int
+  userCount            Int      @default(1)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model Payment {
+  id                  String        @id @default(cuid())
+  tenantId            String
+  stripeInvoiceId     String        @unique
+  stripePaymentIntent String?
+  amount              Int
+  status              PaymentStatus @default(PENDING)
+  paidAt              DateTime?
+  failedAt            DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 model User {
@@ -99,4 +146,19 @@ enum OrderStatus {
   OPEN
   CLOSED
   PAID
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
+import { updateSubscriptionPrice, calculateSubscriptionPrice } from '@/lib/stripe';
 
 export async function GET(request: NextRequest) {
   try {
@@ -102,11 +103,41 @@ export async function POST(request: NextRequest) {
         email: true,
         name: true,
         role: true,
-        theme: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    // Atualiza o preço da assinatura se houver uma assinatura ativa
+    try {
+      const tenant = await db.tenant.findUnique({
+        where: { id: tenantId },
+      });
+
+      if (tenant?.stripeSubscriptionId) {
+        const totalUsers = await db.user.count({
+          where: { tenantId },
+        });
+
+        const newPriceInCents = calculateSubscriptionPrice(totalUsers);
+
+        await updateSubscriptionPrice(
+          tenant.stripeSubscriptionId,
+          newPriceInCents
+        );
+
+        await db.subscription.updateMany({
+          where: { stripeSubscriptionId: tenant.stripeSubscriptionId },
+          data: {
+            priceInCents: newPriceInCents,
+            userCount: totalUsers,
+          },
+        });
+      }
+    } catch (subscriptionError) {
+      console.error('Error updating subscription price:', subscriptionError);
+      // Não falha a criação do usuário se a atualização da assinatura falhar
+    }
 
     return NextResponse.json(user, { status: 201 });
   } catch (error) {

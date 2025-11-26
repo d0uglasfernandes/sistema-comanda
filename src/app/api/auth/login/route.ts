@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { generateTokens } from '@/lib/jwt';
 import { setAuthCookies } from '@/lib/cookies';
+import { checkTenantAccess } from '@/lib/subscription-helpers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,6 +38,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verifica o status da assinatura do tenant
+    const subscriptionAccess = await checkTenantAccess(user.tenantId);
+
     const tokens = generateTokens({
       userId: user.id,
       email: user.email,
@@ -53,6 +57,12 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role,
         tenantId: user.tenantId,
+      },
+      subscription: {
+        isActive: subscriptionAccess.isActive,
+        requiresPayment: subscriptionAccess.requiresPayment,
+        status: subscriptionAccess.subscriptionStatus,
+        daysUntilDue: subscriptionAccess.daysUntilDue,
       },
     });
   } catch (error) {

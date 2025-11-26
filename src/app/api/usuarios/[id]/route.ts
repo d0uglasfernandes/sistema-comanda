@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
+import { updateSubscriptionPrice, calculateSubscriptionPrice } from '@/lib/stripe';
 
 export async function GET(
   request: NextRequest,
@@ -166,6 +167,37 @@ export async function DELETE(
     await db.user.delete({
       where: { id: params.id },
     });
+
+    // Atualiza o preço da assinatura se houver uma assinatura ativa
+    try {
+      const tenant = await db.tenant.findUnique({
+        where: { id: user.tenantId },
+      });
+
+      if (tenant?.stripeSubscriptionId) {
+        const totalUsers = await db.user.count({
+          where: { tenantId: user.tenantId },
+        });
+
+        const newPriceInCents = calculateSubscriptionPrice(totalUsers);
+
+        await updateSubscriptionPrice(
+          tenant.stripeSubscriptionId,
+          newPriceInCents
+        );
+
+        await db.subscription.updateMany({
+          where: { stripeSubscriptionId: tenant.stripeSubscriptionId },
+          data: {
+            priceInCents: newPriceInCents,
+            userCount: totalUsers,
+          },
+        });
+      }
+    } catch (subscriptionError) {
+      console.error('Error updating subscription price:', subscriptionError);
+      // Não falha a deleção do usuário se a atualização da assinatura falhar
+    }
 
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {

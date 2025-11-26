@@ -34,10 +34,19 @@ export async function POST(request: NextRequest) {
 
     const tenantId = generateTenantId();
 
+    // Calcula a data de término do período de teste (3 dias)
+    const trialDays = parseInt(process.env.TRIAL_DAYS || '3');
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
     const tenant = await db.tenant.create({
       data: {
         id: tenantId,
         name: companyName,
+        ownerEmail: email,
+        isActive: true, // Ativo durante o período de teste
+        trialEndsAt,
+        subscriptionStatus: 'TRIAL',
       },
     });
 

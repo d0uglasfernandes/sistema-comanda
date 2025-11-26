@@ -2,12 +2,13 @@
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, createContext, useContext } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import { useSubscription } from '@/hooks/useSubscription';
 
 // Context for sharing sidebar state
 const SidebarContext = createContext<{
@@ -27,15 +28,27 @@ interface MainLayoutProps {
 function MainLayoutContent({ children }: MainLayoutProps) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [error, setError] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { subscriptionData, requiresPayment, isLoading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  // Verifica status de pagamento e redireciona se necessário
+  useEffect(() => {
+    if (!isLoading && !subscriptionLoading && user && requiresPayment) {
+      // Não redireciona se já estiver na página de pagamento
+      if (pathname !== '/payment-required') {
+        router.push('/payment-required');
+      }
+    }
+  }, [user, isLoading, subscriptionLoading, requiresPayment, pathname, router]);
 
   useEffect(() => {
     const checkMobile = () => {

@@ -3,8 +3,18 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Allow all methods for auth endpoints, setup, and tenant
-  if (pathname.startsWith('/api/auth/') || pathname.startsWith('/api/setup') || pathname === '/api/tenant' || pathname === '/login' || pathname === '/register') {
+  // Allow all methods for auth endpoints, setup, tenant, webhooks and payment pages
+  if (
+    pathname.startsWith('/api/auth/') || 
+    pathname.startsWith('/api/setup') || 
+    pathname.startsWith('/api/webhooks/') ||
+    pathname.startsWith('/api/subscription/create-checkout') ||
+    pathname === '/api/tenant' || 
+    pathname === '/login' || 
+    pathname === '/register' ||
+    pathname === '/payment-required' ||
+    pathname === '/payment-success'
+  ) {
     return NextResponse.next();
   }
 
