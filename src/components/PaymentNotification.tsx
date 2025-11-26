@@ -41,13 +41,13 @@ export default function PaymentNotification({ daysUntilDue, onPaymentClick }: Pa
     <Alert 
       className={`relative border-l-4 ${
         daysUntilDue <= 1 
-          ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20' 
-          : 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
+          ? 'border-l-red-500 bg-red-50 dark:bg-red-900/80 dark:border-l-red-400' 
+          : 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/80 dark:border-l-yellow-400'
       }`}
     >
-      <AlertCircle className={`h-4 w-4 ${daysUntilDue <= 1 ? 'text-red-600' : 'text-yellow-600'}`} />
+      <AlertCircle className={`h-4 w-4 ${daysUntilDue <= 1 ? 'text-red-600 dark:text-red-300' : 'text-yellow-600 dark:text-yellow-300'}`} />
       <AlertDescription className="flex items-center justify-between">
-        <span className={`text-sm ${daysUntilDue <= 1 ? 'text-red-900 dark:text-red-200' : 'text-yellow-900 dark:text-yellow-200'}`}>
+        <span className={`text-sm ${daysUntilDue <= 1 ? 'text-red-900 dark:text-red-100' : 'text-yellow-900 dark:text-yellow-100'}`}>
           {getMessage()}
         </span>
         <div className="flex items-center gap-2">

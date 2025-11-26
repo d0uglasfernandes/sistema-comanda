@@ -7,6 +7,34 @@ import Stripe from 'stripe';
  * POST /api/webhooks/stripe
  * Webhook do Stripe para processar eventos de pagamento
  */
+function getSafePeriodStart(current_period_end?: number): Date {
+  if (typeof current_period_end === "number" && !isNaN(current_period_end)) {
+    const date = new Date(current_period_end * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Se cair aqui → data ausente ou inválida
+  const now = new Date();
+  now.setDate(now.getDate());
+  return now;
+}
+
+function getSafePeriodEnd(current_period_end?: number): Date {
+  if (typeof current_period_end === "number" && !isNaN(current_period_end)) {
+    const date = new Date(current_period_end * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Se cair aqui → data ausente ou inválida
+  const now = new Date();
+  now.setDate(now.getDate() + 30);
+  return now;
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
@@ -44,14 +72,17 @@ export async function POST(request: NextRequest) {
   try {
     switch (event.type) {
       case 'customer.subscription.created':
+        console.log("customer.subscription.created: ", JSON.stringify(event, null, 2));
         await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
         break;
 
       case 'customer.subscription.updated':
+        console.log("customer.subscription.updated: ", JSON.stringify(event, null, 2));
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
         break;
 
       case 'customer.subscription.deleted':
+        console.log("customer.subscription.deleted: ", JSON.stringify(event, null, 2));
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
 
@@ -105,7 +136,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     data: {
       stripeSubscriptionId: subscription.id,
       subscriptionStatus: subscription.status === 'trialing' ? 'TRIAL' : 'ACTIVE',
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodEnd: getSafePeriodEnd(subscription.current_period_end),
       isActive: true,
     },
   });
@@ -115,17 +146,35 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     where: { tenantId },
   });
 
-  await db.subscription.create({
-    data: {
-      tenantId,
-      stripeSubscriptionId: subscription.id,
-      status: subscription.status === 'trialing' ? 'TRIAL' : 'ACTIVE',
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      priceInCents: subscription.items.data[0]?.price.unit_amount || 0,
-      userCount,
-    },
+  // Garante que priceInCents seja um número válido
+  const priceInCents = subscription.items.data[0]?.price?.unit_amount ?? 0;
+  
+  console.log('📊 Creating subscription record:', {
+    tenantId,
+    stripeSubscriptionId: subscription.id,
+    status: subscription.status,
+    priceInCents,
+    userCount,
   });
+
+  try {
+    await db.subscription.create({
+      data: {
+        tenantId,
+        stripeSubscriptionId: subscription.id,
+        status: subscription.status === 'trialing' ? 'TRIAL' : 'ACTIVE',
+        currentPeriodStart: getSafePeriodStart(subscription.current_period_start),
+        currentPeriodEnd: getSafePeriodEnd(subscription.current_period_end),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+        priceInCents: priceInCents,
+        userCount: userCount,
+      },
+    });
+    console.log('✅ Subscription record created successfully');
+  } catch (error) {
+    console.error('❌ Error creating subscription record:', error);
+    throw error;
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -173,7 +222,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     data: {
       subscriptionStatus,
       isActive,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodEnd: getSafePeriodEnd(subscription.current_period_end),
     },
   });
 
@@ -182,13 +231,17 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     where: { tenantId: tenant.id },
   });
 
+  // Garante que priceInCents seja um número válido
+  const priceInCents = subscription.items.data[0]?.price?.unit_amount ?? 0;
+
   await db.subscription.updateMany({
     where: { stripeSubscriptionId: subscription.id },
     data: {
       status: subscriptionStatus,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      priceInCents: subscription.items.data[0]?.price.unit_amount || 0,
-      userCount,
+      currentPeriodEnd: getSafePeriodEnd(subscription.current_period_end),
+      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+      priceInCents: priceInCents,
+      userCount: userCount,
     },
   });
 }

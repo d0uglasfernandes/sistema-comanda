@@ -80,7 +80,6 @@
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.6",
     "stripe": "^20.0.0",
-    "stripe-cli": "^0.1.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.3",

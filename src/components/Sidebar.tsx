@@ -44,18 +44,18 @@ const sidebarItems: SidebarItem[] = [
     href: '/comandas',
     icon: <Receipt className="w-4 h-4" />,
   },
-  {
-    label: 'Relatórios',
-    href: '/relatorios',
-    icon: <BarChart3 className="w-4 h-4" />,
-    roles: ['ADMIN', 'CAIXA'],
-  },
-  {
-    label: 'Financeiro',
-    href: '/financeiro',
-    icon: <DollarSign className="w-4 h-4" />,
-    roles: ['ADMIN', 'CAIXA'],
-  },
+  // {
+  //   label: 'Relatórios',
+  //   href: '/relatorios',
+  //   icon: <BarChart3 className="w-4 h-4" />,
+  //   roles: ['ADMIN', 'CAIXA'],
+  // },
+  // {
+  //   label: 'Financeiro',
+  //   href: '/financeiro',
+  //   icon: <DollarSign className="w-4 h-4" />,
+  //   roles: ['ADMIN', 'CAIXA'],
+  // },
   {
     label: 'Usuários',
     href: '/usuarios',

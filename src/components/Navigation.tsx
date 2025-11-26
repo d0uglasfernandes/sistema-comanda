@@ -64,7 +64,7 @@ export default function Navigation() {
               </Link>
             )}
             
-            {user.role === 'ADMIN' && (
+            {/* {user.role === 'ADMIN' && (
               <Link
                 href="/relatorios"
                 className="transition-colors hover:text-foreground/80 text-foreground"
@@ -72,7 +72,7 @@ export default function Navigation() {
                 <BarChart3 className="h-4 w-4 mr-1 inline" />
                 Relatórios
               </Link>
-            )}
+            )} */}
           </nav>
         </div>
         

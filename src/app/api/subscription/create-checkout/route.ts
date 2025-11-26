@@ -77,13 +77,18 @@ export async function POST(request: NextRequest) {
     const successUrl = `${baseUrl}/?payment=success`;
     const cancelUrl = `${baseUrl}/?payment=cancelled`;
 
+    // Se o tenant já está em TRIAL, não adiciona trial adicional
+    // O usuário quer pagar agora, então a assinatura começa imediatamente
+    const includeTrial = tenant.subscriptionStatus !== 'TRIAL';
+
     // Cria sessão de checkout
     const session = await createCheckoutSession(
       stripeCustomerId,
       priceInCents,
       tenant.id,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      includeTrial
     );
 
     return NextResponse.json({

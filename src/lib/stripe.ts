@@ -4,8 +4,36 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY não está definida no ambiente');
 }
 
+function getSafePeriodStart(current_period_end?: number): Date {
+  if (typeof current_period_end === "number" && !isNaN(current_period_end)) {
+    const date = new Date(current_period_end * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Se cair aqui → data ausente ou inválida
+  const now = new Date();
+  now.setDate(now.getDate());
+  return now;
+}
+
+function getSafePeriodEnd(current_period_end?: number): Date {
+  if (typeof current_period_end === "number" && !isNaN(current_period_end)) {
+    const date = new Date(current_period_end * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Se cair aqui → data ausente ou inválida
+  const now = new Date();
+  now.setDate(now.getDate() + 30);
+  return now;
+}
+
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-11-17.clover',
   typescript: true,
 });
 
@@ -56,7 +84,7 @@ export async function createSubscription(
     },
     product_data: {
       name: 'Assinatura Sistema Comanda',
-      description: 'Acesso ao sistema de gestão de comandas',
+      // description: 'Acesso ao sistema de gestão de comandas',
     },
   });
 
@@ -99,7 +127,7 @@ export async function updateSubscriptionPrice(
     },
     product_data: {
       name: 'Assinatura Sistema Comanda',
-      description: 'Acesso ao sistema de gestão de comandas',
+      // description: 'Acesso ao sistema de gestão de comandas',
     },
   });
 
@@ -143,7 +171,8 @@ export async function createCheckoutSession(
   priceInCents: number,
   tenantId: string,
   successUrl: string,
-  cancelUrl: string
+  cancelUrl: string,
+  includeTrial: boolean = true
 ) {
   // Cria um price
   const price = await stripe.prices.create({
@@ -159,6 +188,17 @@ export async function createCheckoutSession(
     },
   });
 
+  const subscriptionData: any = {
+    metadata: {
+      tenantId,
+    },
+  };
+
+  // Só adiciona trial se includeTrial for true
+  if (includeTrial) {
+    subscriptionData.trial_period_days = parseInt(process.env.TRIAL_DAYS || '3');
+  }
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     payment_method_types: ['card'],
@@ -169,12 +209,7 @@ export async function createCheckoutSession(
       },
     ],
     mode: 'subscription',
-    subscription_data: {
-      trial_period_days: parseInt(process.env.TRIAL_DAYS || '3'),
-      metadata: {
-        tenantId,
-      },
-    },
+    subscription_data: subscriptionData,
     success_url: successUrl,
     cancel_url: cancelUrl,
     metadata: {
@@ -192,7 +227,7 @@ export async function getSubscriptionStatus(subscriptionId: string) {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   return {
     status: subscription.status,
-    currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    currentPeriodEnd: getSafePeriodEnd(subscription.current_period_end),
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
   };
 }
