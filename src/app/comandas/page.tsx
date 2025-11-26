@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Eye, Coffee, Trash2, CheckCircle, XCircle, Receipt } from 'lucide-react';
+import { Plus, Eye, Coffee, Trash2, CheckCircle, XCircle, Receipt, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 
 interface OrderItem {
@@ -49,6 +51,10 @@ function ComandasContent() {
   const [selectedProducts, setSelectedProducts] = useState<{ productId: string; quantity: string }[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isAddItemsDialogOpen, setIsAddItemsDialogOpen] = useState(false);
+  const [addItemsProducts, setAddItemsProducts] = useState<{ productId: string; quantity: string }[]>([]);
+  const [filterTable, setFilterTable] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'OPEN' | 'CLOSED' | 'PAID'>('ALL');
 
   const canEdit = ['ADMIN', 'CAIXA', 'GARCOM'].includes(user?.role || '');
 
@@ -184,6 +190,74 @@ function ComandasContent() {
     setIsViewDialogOpen(true);
   }
 
+  function openAddItemsDialog(order: Order) {
+    setSelectedOrder(order);
+    setAddItemsProducts([]);
+    setIsAddItemsDialogOpen(true);
+  }
+
+  function addProductToAddItems() {
+    setAddItemsProducts([...addItemsProducts, { productId: '', quantity: '1' }]);
+  }
+
+  function updateProductInAddItems(index: number, field: 'productId' | 'quantity', value: string) {
+    const updated = [...addItemsProducts];
+    updated[index][field] = value;
+    setAddItemsProducts(updated);
+  }
+
+  function removeProductFromAddItems(index: number) {
+    setAddItemsProducts(addItemsProducts.filter((_, i) => i !== index));
+  }
+
+  async function handleAddItemsToOrder() {
+    if (!selectedOrder || addItemsProducts.length === 0) {
+      return;
+    }
+
+    try {
+      const items = addItemsProducts
+        .filter(p => p.productId && p.quantity)
+        .map(p => ({
+          productId: p.productId,
+          quantity: parseInt(p.quantity),
+        }));
+
+      if (items.length === 0) {
+        setError('Adicione pelo menos um produto');
+        return;
+      }
+
+      const response = await fetch(`/api/comandas/${selectedOrder.id}/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items }),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        await fetchOrders();
+        setIsAddItemsDialogOpen(false);
+        setAddItemsProducts([]);
+        setSelectedOrder(null);
+      } else {
+        const error = await response.json();
+        setError(error.error || 'Failed to add items');
+      }
+    } catch (error) {
+      setError('Network error');
+    }
+  }
+
+  // Filtrar comandas
+  const filteredOrders = orders.filter((order) => {
+    const matchesTable = filterTable === '' || order.tableNumber.toString().includes(filterTable);
+    const matchesStatus = filterStatus === 'ALL' || order.status === filterStatus;
+    return matchesTable && matchesStatus;
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -291,9 +365,36 @@ function ComandasContent() {
         </div>
       )}
 
+      {/* Filters */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Filtrar por número da mesa..."
+            value={filterTable}
+            onChange={(e) => setFilterTable(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todas</SelectItem>
+              <SelectItem value="OPEN">Abertas</SelectItem>
+              <SelectItem value="CLOSED">Fechadas</SelectItem>
+              <SelectItem value="PAID">Pagas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Orders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <Card key={order.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
@@ -342,22 +443,35 @@ function ComandasContent() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openViewDialog(order)}
-                    className="flex-1"
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    Ver
-                  </Button>
+                <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openViewDialog(order)}
+                      className="flex-1"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Ver
+                    </Button>
+                    {canEdit && order.status === 'OPEN' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openAddItemsDialog(order)}
+                        className="flex-1"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    )}
+                  </div>
                   {canEdit && order.status === 'OPEN' && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleUpdateOrderStatus(order.id, 'CLOSED')}
-                      className="flex-1"
+                      className="w-full"
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
                       Fechar
@@ -368,7 +482,7 @@ function ComandasContent() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleUpdateOrderStatus(order.id, 'PAID')}
-                      className="flex-1"
+                      className="w-full"
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
                       Pagar
@@ -381,18 +495,21 @@ function ComandasContent() {
         ))}
       </div>
 
-      {orders.length === 0 && (
+      {filteredOrders.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
             <Receipt className="w-16 h-16 mx-auto mb-4" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Nenhuma comanda encontrada
+            {orders.length === 0 ? 'Nenhuma comanda encontrada' : 'Nenhuma comanda corresponde aos filtros'}
           </h3>
           <p className="text-gray-500 mb-6">
-            Comece criando sua primeira comanda no sistema.
+            {orders.length === 0 
+              ? 'Comece criando sua primeira comanda no sistema.'
+              : 'Tente ajustar os filtros ou limpar a busca.'
+            }
           </p>
-          {canEdit && (
+          {canEdit && orders.length === 0 && (
             <Button onClick={() => setIsNewOrderDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Criar Comanda
@@ -434,6 +551,81 @@ function ComandasContent() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Items to Order Dialog */}
+      <Dialog open={isAddItemsDialogOpen} onOpenChange={setIsAddItemsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Adicionar Itens à Comanda</DialogTitle>
+            <DialogDescription>
+              Mesa #{selectedOrder?.tableNumber} • Adicione mais itens à comanda
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium">Itens</label>
+                <Button type="button" variant="outline" size="sm" onClick={addProductToAddItems}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Adicionar Produto
+                </Button>
+              </div>
+              
+              {addItemsProducts.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Clique em "Adicionar Produto" para começar
+                </div>
+              )}
+              
+              {addItemsProducts.map((item, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <select
+                    value={item.productId}
+                    onChange={(e) => updateProductInAddItems(index, 'productId', e.target.value)}
+                    className="flex-1 p-2 border rounded"
+                  >
+                    <option value="">Selecione um produto</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} - R$ {(product.priceInCents / 100).toFixed(2)}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateProductInAddItems(index, 'quantity', e.target.value)}
+                    className="w-20 p-2 border rounded"
+                    placeholder="Qtd"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeProductFromAddItems(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddItemsDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleAddItemsToOrder} disabled={addItemsProducts.length === 0}>
+                Adicionar Itens
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

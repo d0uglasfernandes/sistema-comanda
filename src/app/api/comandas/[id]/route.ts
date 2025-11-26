@@ -4,16 +4,18 @@ import { getUserFromRequest } from '@/lib/auth';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return handleOrderUpdate(request, params.id);
+  const { id } = await params;
+  return handleOrderUpdate(request, id);
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return handleOrderUpdate(request, params.id);
+  const { id } = await params;
+  return handleOrderUpdate(request, id);
 }
 
 async function handleOrderUpdate(request: NextRequest, orderId: string) {
@@ -74,7 +76,7 @@ async function handleOrderUpdate(request: NextRequest, orderId: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromRequest(request);
@@ -86,9 +88,11 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     const order = await db.order.findFirst({
       where: {
-        id: params.id,
+        id: id,
         tenantId: user.tenantId,
       },
       include: {

@@ -49,3 +49,4 @@ prompt
 server.log
 
 /prisma/dev.db
+/prisma/db/custom.db

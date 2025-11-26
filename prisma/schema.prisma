@@ -33,7 +33,6 @@ model User {
   name         String   
   passwordHash String   
   role         Role     @default(GARCOM)
-  theme        String   @default("light")
   tenantId     String   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

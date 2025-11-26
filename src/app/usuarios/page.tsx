@@ -18,7 +18,6 @@ interface User {
   email: string;
   name: string;
   role: 'ADMIN' | 'CAIXA' | 'GARCOM';
-  theme: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +34,6 @@ function UsuariosContent() {
     name: '',
     password: '',
     role: 'GARCOM' as 'ADMIN' | 'CAIXA' | 'GARCOM',
-    theme: 'light',
   });
 
   useEffect(() => {
@@ -81,7 +79,6 @@ function UsuariosContent() {
         email: formData.email,
         name: formData.name,
         role: formData.role,
-        theme: formData.theme,
       };
 
       if (formData.password || !editingUser) {

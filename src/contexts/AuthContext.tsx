@@ -8,7 +8,6 @@ interface User {
   name: string;
   role: string;
   tenantId: string;
-  theme: string;
 }
 
 interface Tenant {
@@ -28,7 +27,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  updateTheme: (theme: string) => Promise<void>;
   updateTenant: (name: string) => Promise<void>;
   isLoading: boolean;
 }
@@ -143,34 +141,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function updateTheme(theme: string) {
-    try {
-      const response = await fetch('/api/auth/theme', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ theme }),
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (user) {
-          setUser({ ...user, theme: data.theme });
-        }
-        // Apply theme immediately
-        if (data.theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-    } catch (error) {
-      console.error('Theme update failed:', error);
-    }
-  }
-
   async function updateTenant(name: string) {
     try {
       const response = await fetch('/api/tenant', {
@@ -192,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, tenant, login, logout, refresh, updateTheme, updateTenant, isLoading }}>
+    <AuthContext.Provider value={{ user, tenant, login, logout, refresh, updateTenant, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
