@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { X, AlertCircle, CreditCard } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -8,17 +7,18 @@ import { Button } from '@/components/ui/button';
 interface PaymentNotificationProps {
   daysUntilDue: number;
   onPaymentClick: () => void;
+  onClose?: () => void;
 }
 
-export default function PaymentNotification({ daysUntilDue, onPaymentClick }: PaymentNotificationProps) {
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Fecha a notificação mas ela reaparece ao recarregar a página
+export default function PaymentNotification({ daysUntilDue, onPaymentClick, onClose }: PaymentNotificationProps) {
+  // Fecha a notificação e atualiza o estado global
   const handleClose = () => {
-    setIsVisible(false);
+    if (onClose) {
+      onClose();
+    }
   };
 
-  if (!isVisible || daysUntilDue > 3 || daysUntilDue < 0) {
+  if (daysUntilDue > 3 || daysUntilDue < 0) {
     return null;
   }
 

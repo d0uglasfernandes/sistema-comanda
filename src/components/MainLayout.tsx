@@ -14,9 +14,13 @@ import { useSubscription } from '@/hooks/useSubscription';
 const SidebarContext = createContext<{
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean) => void;
+  showPaymentNotification: boolean;
+  closePaymentNotification: () => void;
 }>({
   isCollapsed: false,
   setIsCollapsed: () => {},
+  showPaymentNotification: false,
+  closePaymentNotification: () => {},
 });
 
 export const useSidebar = () => useContext(SidebarContext);
@@ -32,6 +36,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   const [error, setError] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [notificationManuallyClosed, setNotificationManuallyClosed] = useState(false);
   const { subscriptionData, requiresPayment, isLoading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
@@ -64,6 +69,28 @@ function MainLayoutContent({ children }: MainLayoutProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Payment notification logic
+  const shouldShowNotification =
+    subscriptionData &&
+    subscriptionData.daysUntilDue !== null &&
+    subscriptionData.daysUntilDue !== undefined &&
+    subscriptionData.daysUntilDue >= 0 &&
+    subscriptionData.daysUntilDue <= 3;
+
+  const showPaymentNotification =
+    !!shouldShowNotification && !notificationManuallyClosed;
+
+  const closePaymentNotification = () => {
+    setNotificationManuallyClosed(true);
+  };
+
+  // Reset manual close when subscription changes
+  useEffect(() => {
+    if (!shouldShowNotification) {
+      setNotificationManuallyClosed(false);
+    }
+  }, [shouldShowNotification]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -77,18 +104,24 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   }
 
   return (
-    <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed }}>
+    <SidebarContext.Provider value={{
+      isCollapsed,
+      setIsCollapsed,
+      showPaymentNotification,
+      closePaymentNotification
+    }}>
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <Header />
-        
-        {/* Sidebar */}
         <Sidebar />
 
-        {/* Main Content */}
-        <main className={`transition-all duration-300 ${
-          isMobile ? 'pt-16' : isCollapsed ? 'ml-16 pt-16' : 'ml-64 pt-16'
-        }`}>
+        <main
+          className={`transition-all duration-300 ${
+            isMobile ? '' : isCollapsed ? 'ml-16' : 'ml-64'
+          }`}
+          style={{
+            paddingTop: showPaymentNotification ? 'calc(4rem + 64px)' : '4rem'
+          }}
+        >
           <div className="p-4 lg:p-6">
             {error && (
               <Alert variant="destructive" className="mb-6">
