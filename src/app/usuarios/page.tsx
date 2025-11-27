@@ -102,8 +102,7 @@ function UsuariosContent() {
           email: '',
           name: '',
           password: '',
-          role: 'GARCOM',
-          theme: 'light',
+          role: 'GARCOM'
         });
       } else {
         const error = await response.json();
@@ -142,8 +141,7 @@ function UsuariosContent() {
       email: user.email,
       name: user.name,
       password: '',
-      role: user.role,
-      theme: user.theme,
+      role: user.role
     });
     setIsDialogOpen(true);
   }
@@ -154,8 +152,7 @@ function UsuariosContent() {
       email: '',
       name: '',
       password: '',
-      role: 'GARCOM',
-      theme: 'light',
+      role: 'GARCOM'
     });
     setIsDialogOpen(true);
   }
@@ -215,7 +212,6 @@ function UsuariosContent() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Função</TableHead>
-                <TableHead>Tema</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -225,7 +221,6 @@ function UsuariosContent() {
                   <TableCell className="font-medium">{userItem.name}</TableCell>
                   <TableCell>{userItem.email}</TableCell>
                   <TableCell>{getRoleBadge(userItem.role)}</TableCell>
-                  <TableCell>{userItem.theme}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -305,19 +300,6 @@ function UsuariosContent() {
                 <option value="GARCOM">Garçom</option>
                 <option value="CAIXA">Caixa</option>
                 <option value="ADMIN">Admin</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="theme">Tema</Label>
-              <select
-                id="theme"
-                value={formData.theme}
-                onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-                className="w-full p-2 border rounded"
-                required
-              >
-                <option value="light">Claro</option>
-                <option value="dark">Escuro</option>
               </select>
             </div>
             <div className="flex gap-2 justify-end">

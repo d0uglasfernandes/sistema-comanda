@@ -78,20 +78,10 @@ export default function Header() {
         <div className="flex items-center flex-1 gap-8">
           {/* Search Bar (Optional/Placeholder) */}
           <div className="relative w-full max-w-md hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar..."
-              className="pl-10 bg-muted/20 border-border/50 focus:bg-background transition-colors rounded-xl"
-            />
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          {/* Notifications (Placeholder) */}
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
-            <Bell className="h-5 w-5" />
-          </Button>
-
           {/* Theme Toggle Button */}
           <Button
             variant="ghost"
@@ -108,14 +98,14 @@ export default function Header() {
             <span className="sr-only">Alternar tema</span>
           </Button>
 
-          <div className="h-8 w-[1px] bg-border/50 mx-2" />
+          <div className="h-8 w-1px bg-border/50 mx-2" />
 
           {/* User Avatar with Logout */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-transparent p-0">
                 <Avatar className="h-10 w-10 border-2 border-primary/20 transition-all hover:border-primary">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-primary-foreground font-medium">
+                  <AvatarFallback className="bg-linear-to-br from-primary to-primary/60 text-primary-foreground font-medium">
                     {user?.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
