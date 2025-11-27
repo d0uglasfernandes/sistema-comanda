@@ -80,7 +80,7 @@ export default function RegisterPage() {
         credentials: 'include',
       });
 
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

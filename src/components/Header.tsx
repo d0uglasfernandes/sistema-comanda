@@ -16,13 +16,10 @@ import { LogOut, User, Settings, Sun, Moon } from 'lucide-react';
 import PaymentNotification from './PaymentNotification';
 import axios from 'axios';
 
-import { useSidebar } from '@/components/MainLayout';
-
 export default function Header() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { subscriptionData, shouldShowNotification } = useSubscription();
-  const { showPaymentNotification, closePaymentNotification } = useSidebar();
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -67,22 +64,16 @@ export default function Header() {
   return (
     <>
       {/* Payment Notification */}
-      {showPaymentNotification && subscriptionData && (
-        <div className="sticky top-0 z-60">
+      {shouldShowNotification && subscriptionData && (
+        <div className="sticky top-0 z-50">
           <PaymentNotification 
             daysUntilDue={subscriptionData.daysUntilDue || 0}
             onPaymentClick={handlePayment}
-            onClose={closePaymentNotification}
           />
         </div>
       )}
       
-      <header 
-        className="bg-card border-b border-border px-4 h-16 sticky z-50"
-        style={{
-          top: showPaymentNotification ? '64px' : '0'
-        }}
-      >
+      <header className="bg-card border-b border-border px-4 h-16 sticky top-0 z-50">
         <div className="flex items-center justify-between h-full">
           <div className="flex items-center space-x-4">
             {/* Título removido - agora aparece no Sidebar */}

@@ -37,7 +37,7 @@ export default function LoginPage() {
         throw new Error(errorData.error || 'Login failed');
       }
 
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

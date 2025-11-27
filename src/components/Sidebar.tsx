@@ -30,7 +30,7 @@ interface SidebarItem {
 const sidebarItems: SidebarItem[] = [
   {
     label: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: <Home className="w-4 h-4" />,
   },
   {
@@ -116,7 +116,7 @@ function SidebarContent({
               variant="ghost"
               size="sm"
               onClick={() => setIsCollapsed(true)}
-              className="h-8 w-8 p-0 shrink-0"
+              className="h-8 w-8 p-0 flex-shrink-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -140,7 +140,6 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
-        <div className="h-20px" />
         <ul className="space-y-2">
           {filteredItems.map((item) => (
             <li key={item.href}>
@@ -165,7 +164,7 @@ function SidebarContent({
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { isCollapsed, showPaymentNotification } = useSidebar();
+  const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -178,50 +177,28 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Altura da notificação de pagamento (quando visível)
-  const notificationHeight = showPaymentNotification ? '64px' : '0px';
-
   // Desktop Sidebar
   if (!isMobile) {
     return (
-      <div 
-        className={`fixed left-0 z-40 transition-all duration-300 ${
-          isCollapsed ? 'w-16' : 'w-64'
-        }`}
-        style={{
-          top: notificationHeight,
-          height: `calc(100vh - ${notificationHeight})`
-        }}
-      >
+      <div className={`fixed left-0 top-0 h-full z-40 transition-all duration-300 ${
+        isCollapsed ? 'w-16' : 'w-64'
+      }`}>
         <SidebarContent />
       </div>
     );
   }
 
   // Mobile Sidebar (Sheet)
-  // Classes customizadas para ajustar posicionamento quando notificação está visível
-  const sheetContentClasses = showPaymentNotification
-    ? '!top-[64px] !h-[calc(100vh_-_64px)] transition-all duration-300'
-    : 'transition-all duration-300';
-
   return (
     <>
-      <div 
-        className="md:hidden fixed left-4 z-50 transition-all duration-300"
-        style={{
-          top: showPaymentNotification ? 'calc(64px + 1rem)' : '1rem'
-        }}
-      >
+      <div className="md:hidden fixed top-4 left-4 z-50">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon">
               <Menu className="w-4 h-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent 
-            side="left" 
-            className={`p-0 w-64 ${sheetContentClasses}`}
-          >
+          <SheetContent side="left" className="p-0 w-64">
             <SidebarContent 
               isMobile={true} 
               onClose={() => setIsOpen(false)}

@@ -1,372 +1,245 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import MainLayout from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Eye, Coffee, Trash2 } from 'lucide-react';
-import LoadingSpinner from '@/components/ui/loading-spinner';
+import { Coffee, Users, BarChart3, CreditCard, CheckCircle, Zap, Shield, Clock } from 'lucide-react';
 
-interface OrderItem {
-  id: string;
-  quantity: number;
-  unitPrice: number;
-  product: {
-    id: string;
-    name: string;
-    priceInCents: number;
-  };
-}
-
-interface Order {
-  id: string;
-  tableNumber: number;
-  status: 'OPEN' | 'CLOSED' | 'PAID';
-  totalInCents: number;
-  items: OrderItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  priceInCents: number;
-}
-
-function DashboardContent() {
-  const { user } = useAuth();
+export default function LandingPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isDataLoading, setIsDataLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
-  const [newOrderTable, setNewOrderTable] = useState('');
-  const [selectedProducts, setSelectedProducts] = useState<{ productId: string; quantity: string }[]>([]);
-
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-      fetchProducts();
-    }
-  }, [user]);
-
-  async function fetchOrders() {
-    try {
-      const response = await fetch('/api/comandas', {
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data);
-      } else {
-        setError('Failed to fetch orders');
-      }
-    } catch (error) {
-      setError('Network error');
-    } finally {
-      setIsDataLoading(false);
-    }
-  }
-
-  async function fetchProducts() {
-    try {
-      const response = await fetch('/api/produtos', {
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch products');
-    }
-  }
-
-  async function handleCreateOrder() {
-    if (!newOrderTable || selectedProducts.length === 0) {
-      return;
-    }
-
-    try {
-      const items = selectedProducts
-        .filter(p => p.productId && p.quantity)
-        .map(p => ({
-          productId: p.productId,
-          quantity: parseInt(p.quantity),
-        }));
-
-      const response = await fetch('/api/comandas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tableNumber: parseInt(newOrderTable),
-          items,
-        }),
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        await fetchOrders();
-        setIsNewOrderDialogOpen(false);
-        setNewOrderTable('');
-        setSelectedProducts([]);
-      } else {
-        const error = await response.json();
-        setError(error.error || 'Failed to create order');
-      }
-    } catch (error) {
-      setError('Network error');
-    }
-  }
-
-  function addProductToOrder() {
-    setSelectedProducts([...selectedProducts, { productId: '', quantity: '1' }]);
-  }
-
-  function updateProductInOrder(index: number, field: 'productId' | 'quantity', value: string) {
-    const updated = [...selectedProducts];
-    updated[index][field] = value;
-    setSelectedProducts(updated);
-  }
-
-  function removeProductFromOrder(index: number) {
-    setSelectedProducts(selectedProducts.filter((_, i) => i !== index));
-  }
-
-  function getStatusBadge(status: string) {
-    switch (status) {
-      case 'OPEN':
-        return <Badge variant="default">Aberta</Badge>;
-      case 'CLOSED':
-        return <Badge variant="secondary">Fechada</Badge>;
-      case 'PAID':
-        return <Badge variant="outline">Paga</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  }
-
-  const openOrders = orders.filter(order => order.status === 'OPEN');
-  const totalRevenue = orders
-    .filter(order => order.status === 'PAID')
-    .reduce((sum, order) => sum + order.totalInCents, 0);
-
-  if (isDataLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="md" text="Carregando dados..." />
-      </div>
-    );
-  }
 
   return (
-    <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-        <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Comanda
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="container flex h-16 items-center justify-between px-4 mx-auto max-w-7xl">
+          <div className="flex items-center gap-2">
+            <Coffee className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">Sistema de Comandas</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => router.push('/login')}>
+              Entrar
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Nova Comanda</DialogTitle>
-              <DialogDescription>
-                Crie uma nova comanda para uma mesa
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Número da Mesa</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newOrderTable}
-                  onChange={(e) => setNewOrderTable(e.target.value)}
-                  className="w-full p-2 border rounded"
-                  placeholder="1"
-                />
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium">Itens</label>
-                  <Button type="button" variant="outline" size="sm" onClick={addProductToOrder}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Produto
-                  </Button>
-                </div>
-                
-                {selectedProducts.map((item, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <select
-                      value={item.productId}
-                      onChange={(e) => updateProductInOrder(index, 'productId', e.target.value)}
-                      className="flex-1 p-2 border rounded"
-                    >
-                      <option value="">Selecione um produto</option>
-                      {products.map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.name} - R$ {(product.priceInCents / 100).toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) => updateProductInOrder(index, 'quantity', e.target.value)}
-                      className="w-20 p-2 border rounded"
-                      placeholder="Qtd"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeProductFromOrder(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsNewOrderDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreateOrder}>
-                  Criar Comanda
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 border border-red-200 bg-red-50 text-red-700 rounded">
-          {error}
+            <Button onClick={() => router.push('/register')}>
+              Começar Agora
+            </Button>
+          </div>
         </div>
-      )}
+      </header>
 
-      {/* Stats Cards */}
-      <div className={`grid gap-4 mb-6 ${
-        (user?.role === 'ADMIN' || user?.role === 'CAIXA') 
-          ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
-          : 'grid-cols-1 md:grid-cols-2'
-      }`}>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comandas Abertas</CardTitle>
-            <Coffee className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{openOrders.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {openOrders.length > 0 ? 'Mesas ativas no momento' : 'Nenhuma mesa ativa'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Comandas</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{orders.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Todas as comandas criadas
-            </p>
-          </CardContent>
-        </Card>
-        
-        {(user?.role === 'ADMIN' || user?.role === 'CAIXA') && (
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-              <span className="text-xs text-muted-foreground">Pagas</span>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">R$ {(totalRevenue / 100).toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total já pago
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Recent Orders */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Comandas Recentes</CardTitle>
-          <CardDescription>Últimas comandas criadas no sistema</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {orders.slice(0, 5).map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm font-medium">
-                    Mesa #{order.tableNumber}
-                  </div>
-                  {getStatusBadge(order.status)}
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">R$ {(order.totalInCents / 100).toFixed(2)}</div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(order.createdAt).toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                </div>
-              </div>
-            ))}
+      {/* Hero Section */}
+      <section className="container px-4 mx-auto max-w-7xl py-20 md:py-32">
+        <div className="flex flex-col items-center text-center space-y-8">
+          <div className="inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-medium bg-muted/50">
+            <Zap className="mr-2 h-4 w-4 text-primary" />
+            Sistema completo para gerenciamento de comandas
           </div>
           
-          {orders.length > 5 && (
-            <div className="text-center mt-4">
-              <Button
-                variant="outline"
-                onClick={() => router.push('/comandas')}
-                className="w-full sm:w-auto"
-              >
-                Ver Todas as Comandas
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </>
-  );
-}
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl">
+            Gerencie seu bar ou restaurante com{' '}
+            <span className="text-primary">eficiência e controle</span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+            Sistema completo para controle de comandas, produtos, usuários e muito mais. 
+            Simplifique a gestão do seu estabelecimento com uma plataforma moderna e intuitiva.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            <Button size="lg" className="text-lg h-12 px-8" onClick={() => router.push('/register')}>
+              Criar Conta Grátis
+            </Button>
+            <Button size="lg" variant="outline" className="text-lg h-12 px-8" onClick={() => router.push('/login')}>
+              Já tenho conta
+            </Button>
+          </div>
 
-export default function DashboardPage() {
-  return (
-    <MainLayout>
-      <DashboardContent />
-    </MainLayout>
+          <div className="flex items-center gap-6 mt-8 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span>Período de teste gratuito</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span>Sem cartão de crédito</span>
+            </div>
+            <div className="flex items-center gap-2 hidden md:flex">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span>Fácil configuração</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="container px-4 mx-auto max-w-7xl py-20 md:py-32">
+        <div className="text-center space-y-4 mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold">
+            Tudo que você precisa em um só lugar
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Recursos poderosos para gerenciar seu estabelecimento de forma eficiente
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="hover:shadow-lg transition-all border-2">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Coffee className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Gestão de Comandas</CardTitle>
+              <CardDescription>
+                Crie, edite e acompanhe comandas em tempo real. Controle total sobre as mesas e pedidos do seu estabelecimento.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all border-2">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <BarChart3 className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Controle de Produtos</CardTitle>
+              <CardDescription>
+                Gerencie seu catálogo de produtos com facilidade. Preços, categorias e estoque sempre organizados.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all border-2">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Multi-usuário</CardTitle>
+              <CardDescription>
+                Sistema com diferentes níveis de permissão. Admin, caixa, garçom - cada um com seu papel definido.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all border-2">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <CreditCard className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Pagamentos Integrados</CardTitle>
+              <CardDescription>
+                Sistema de assinatura integrado com Stripe. Cobranças automáticas e gestão financeira simplificada.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all border-2">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Segurança Total</CardTitle>
+              <CardDescription>
+                Seus dados protegidos com autenticação JWT e criptografia de ponta. Multi-tenant isolado e seguro.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all border-2">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Clock className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Tempo Real</CardTitle>
+              <CardDescription>
+                Atualizações instantâneas e sincronização em tempo real. Toda a equipe sempre atualizada.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </section>
+
+      {/* How it Works Section */}
+      <section className="container px-4 mx-auto max-w-7xl py-20 md:py-32">
+        <div className="text-center space-y-4 mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold">
+            Como funciona
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Começar é simples e rápido
+          </p>
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
+              1
+            </div>
+            <h3 className="text-xl font-bold">Crie sua conta</h3>
+            <p className="text-muted-foreground">
+              Cadastre-se gratuitamente e configure seu estabelecimento em poucos minutos.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
+              2
+            </div>
+            <h3 className="text-xl font-bold">Configure seu sistema</h3>
+            <p className="text-muted-foreground">
+              Adicione produtos, usuários e personalize de acordo com suas necessidades.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
+              3
+            </div>
+            <h3 className="text-xl font-bold">Comece a usar</h3>
+            <p className="text-muted-foreground">
+              Pronto! Comece a gerenciar suas comandas e acompanhe tudo em tempo real.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container px-4 mx-auto max-w-7xl py-20 md:py-32">
+        <Card className="border-2 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="p-12 md:p-16">
+            <div className="flex flex-col items-center text-center space-y-8">
+              <h2 className="text-3xl md:text-4xl font-bold max-w-2xl">
+                Pronto para revolucionar a gestão do seu estabelecimento?
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-xl">
+                Junte-se a diversos estabelecimentos que já transformaram sua operação com nosso sistema.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="text-lg h-12 px-8" onClick={() => router.push('/register')}>
+                  Criar Conta Grátis
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg h-12 px-8" onClick={() => router.push('/login')}>
+                  Entrar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-muted/50">
+        <div className="container px-4 mx-auto max-w-7xl py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Coffee className="h-5 w-5 text-primary" />
+              <span className="font-semibold">Sistema de Comandas</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              © 2024 Sistema de Comandas. Todos os direitos reservados.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

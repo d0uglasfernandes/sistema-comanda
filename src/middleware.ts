@@ -5,6 +5,7 @@ export async function middleware(request: NextRequest) {
   
   // Allow all methods for auth endpoints, setup, tenant, webhooks and payment pages
   if (
+    pathname === '/' ||
     pathname.startsWith('/api/auth/') || 
     pathname.startsWith('/api/setup') || 
     pathname.startsWith('/api/webhooks/') ||
@@ -61,8 +62,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protect all pages except login and register
-  if (pathname !== '/login' && pathname !== '/register') {
+  // Protect all pages except landing page, login and register
+  if (pathname !== '/' && pathname !== '/login' && pathname !== '/register') {
     const accessToken = request.cookies.get('access_token')?.value;
     
     if (!accessToken) {
