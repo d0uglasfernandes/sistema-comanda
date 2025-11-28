@@ -178,7 +178,7 @@ function ProdutosContent() {
                       <CardTitle className="text-lg truncate font-bold">{product.name}</CardTitle>
                     </div>
                     {canEdit && (
-                      <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 ml-2 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="sm"
